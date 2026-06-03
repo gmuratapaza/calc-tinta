@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Tinta Alessi</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a18; min-height: 100vh; padding: 1rem; }
+  .app { max-width: 480px; margin: 0 auto; }
+  header { text-align: center; padding: 1.5rem 0 1rem; }
+  header h1 { font-size: 20px; font-weight: 600; color: #1a1a18; }
+  header p { font-size: 13px; color: #888780; margin-top: 4px; }
+  .card { background: #fff; border-radius: 14px; padding: 1.25rem; margin-bottom: 12px; border: 0.5px solid #e0dfd8; }
+  .section-label { font-size: 11px; color: #888780; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .prod-btn { background: #f5f5f0; border: 1.5px solid transparent; border-radius: 10px; padding: 10px 12px; cursor: pointer; text-align: left; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+  .prod-btn:active { transform: scale(0.97); }
+  .prod-btn.active { background: #eaf3de; border-color: #639922; }
+  .prod-name { font-weight: 600; font-size: 13px; color: #1a1a18; }
+  .prod-btn.active .prod-name { color: #3b6d11; }
+  .prod-sub { font-size: 11px; color: #888780; margin-top: 2px; }
+  .field-group { margin-bottom: 12px; }
+  select, input[type=number] {
+    width: 100%; padding: 10px 12px; font-size: 15px;
+    border: 0.5px solid #d3d1c7; border-radius: 10px;
+    background: #f5f5f0; color: #1a1a18; appearance: none;
+    -webkit-appearance: none; outline: none;
+  }
+  select:focus, input[type=number]:focus { border-color: #639922; background: #fff; }
+  .area-row { display: flex; align-items: center; gap: 8px; }
+  .area-row input { flex: 1; }
+  .area-row span { font-size: 15px; color: #888780; }
+  .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .metric { background: #f5f5f0; border-radius: 10px; padding: 12px; text-align: center; }
+  .metric-label { font-size: 11px; color: #888780; margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 600; color: #1a1a18; }
+  .metric-unit { font-size: 12px; font-weight: 400; color: #888780; margin-left: 2px; }
+  .info-bar { background: #f5f5f0; border-radius: 10px; padding: 12px; font-size: 12px; color: #5f5e5a; line-height: 1.7; margin-top: 10px; }
+  .info-bar strong { color: #1a1a18; font-weight: 600; }
+  .warning { background: #faeeda; border-radius: 10px; padding: 12px; font-size: 12px; color: #633806; line-height: 1.6; margin-top: 8px; }
+  .warning strong { font-weight: 600; }
+  footer { text-align: center; font-size: 11px; color: #b4b2a9; padding: 1rem 0 2rem; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>🎨 Calculadora de Tinta</h1>
+    <p>Alessi — dados do fabricante</p>
+  </header>
+
+  <div class="card">
+    <p class="section-label">Produto</p>
+    <div class="product-grid" id="prodGrid">
+      <button class="prod-btn active" data-id="dupla" onclick="selectProd(this)">
+        <div class="prod-name">Dupla Ação</div>
+        <div class="prod-sub">Paredes int./ext.</div>
+      </button>
+      <button class="prod-btn" data-id="esmalte" onclick="selectProd(this)">
+        <div class="prod-name">Esmalte Sintético</div>
+        <div class="prod-sub">Madeiras e metais</div>
+      </button>
+      <button class="prod-btn" data-id="piso" onclick="selectProd(this)">
+        <div class="prod-name">Acrílico Piso</div>
+        <div class="prod-sub">Pisos cimentados</div>
+      </button>
+      <button class="prod-btn" data-id="superior" onclick="selectProd(this)">
+        <div class="prod-name">Acrílico Superior</div>
+        <div class="prod-sub">Super rendimento</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field-group">
+      <p class="section-label">Ferramenta de aplicação</p>
+      <select id="ferramenta" onchange="calc()"></select>
+    </div>
+    <div class="field-group">
+      <p class="section-label">Tipo de superfície</p>
+      <select id="superficie" onchange="calc()"></select>
+    </div>
+    <div class="field-group" style="margin-bottom:0">
+      <p class="section-label">Área a pintar</p>
+      <div class="area-row">
+        <input type="number" id="area" value="50" min="1" step="1" oninput="calc()" inputmode="numeric" />
+        <span>m²</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="section-label">Quantidade necessária</p>
+    <div class="results-grid">
+      <div class="metric">
+        <div class="metric-label">Tinta pura</div>
+        <div class="metric-value" id="r-tinta">—<span class="metric-unit">L</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" id="r-diluente-label">Diluente</div>
+        <div class="metric-value" id="r-diluente">—<span class="metric-unit">L</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total</div>
+        <div class="metric-value" id="r-total">—<span class="metric-unit">L</span></div>
+      </div>
+    </div>
+    <div class="info-bar" id="infoBar"></div>
+    <div id="warnBar"></div>
+  </div>
+
+  <footer>Baseado nas fichas técnicas Alessi · alessi.ind.br</footer>
+</div>
+
+<script>
+const PRODUCTS = {
+  dupla: {
+    rendimento: 6.1,
+    diluente: 'Água potável',
+    ferramentas: [
+      { label: 'Rolo de lã',  dilMin: 0.20, dilMax: 0.30 },
+      { label: 'Pincel',      dilMin: 0.20, dilMax: 0.30 },
+      { label: 'Pistola',     dilMin: 0.30, dilMax: 0.40 },
+    ],
+    superficies: [
+      { label: 'Alvenaria / reboco / massa corrida', demoes: 2 },
+      { label: 'Concreto / fibrocimento / gesso',    demoes: 2 },
+      { label: 'Repintura sobre látex',              demoes: 2 },
+    ],
+    obs: 'Rendimento ~6,1 m²/L · 3 demãos · NBR 14942',
+  },
+  esmalte: {
+    rendimento: 20.8,
+    diluente: 'Aguarrás Alessi',
+    ferramentas: [
+      { label: 'Rolo de espuma', dilMin: 0.10, dilMax: 0.10 },
+      { label: 'Pincel',         dilMin: 0.10, dilMax: 0.10 },
+      { label: 'Pistola',        dilMin: 0.10, dilMax: 0.10 },
+    ],
+    superficies: [
+      { label: 'Metais / galvanizados / alumínio', demoes: 2 },
+      { label: 'Madeira nova — 1ª demão',          demoes: 1, dilOverride: 0.15 },
+      { label: 'Madeira nova — demãos seguintes',  demoes: 1, dilOverride: 0.10 },
+      { label: 'Cerâmica não vitrificada',         demoes: 2 },
+    ],
+    obs: 'Rendimento ~20,8 m²/L por demão · Diluente: Aguarrás (nunca thinner)',
+  },
+  piso: {
+    rendimento: 7.4,
+    diluente: 'Água potável',
+    ferramentas: [
+      { label: 'Rolo de lã', dilMin: 0.10, dilMax: 0.20 },
+      { label: 'Pincel',     dilMin: 0.10, dilMax: 0.20 },
+      { label: 'Pistola',    dilMin: 0.10, dilMax: 0.20 },
+    ],
+    superficies: [
+      { label: 'Piso cimentado (área selada)',      demoes: 2 },
+      { label: 'Piso cimentado (área não selada)',  demoes: 2, dilOverride: 0.30 },
+      { label: 'Quadra / varanda / garagem',        demoes: 2 },
+    ],
+    obs: 'Rendimento ~7,4 m²/L · Área não selada: 30% na 1ª demão',
+  },
+  superior: {
+    rendimento: 7.7,
+    diluente: 'Água potável',
+    ferramentas: [
+      { label: 'Rolo de lã', dilMin: 0.20, dilMax: 0.30 },
+      { label: 'Pincel',     dilMin: 0.20, dilMax: 0.30 },
+      { label: 'Pistola',    dilMin: 0.30, dilMax: 0.40 },
+    ],
+    superficies: [
+      { label: 'Alvenaria / reboco / massa corrida', demoes: 2 },
+      { label: 'Concreto / fibrocimento / gesso',    demoes: 2 },
+      { label: 'Repintura sobre látex',              demoes: 2 },
+    ],
+    obs: 'Rendimento ~7,7 m²/L · Super cobertura Premium',
+  },
+};
+
+let currentId = 'dupla';
+
+function selectProd(btn) {
+  document.querySelectorAll('.prod-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentId = btn.dataset.id;
+  populateSelects();
+  calc();
+}
+
+function populateSelects() {
+  const p = PRODUCTS[currentId];
+  document.getElementById('ferramenta').innerHTML = p.ferramentas.map((f,i) => `<option value="${i}">${f.label}</option>`).join('');
+  document.getElementById('superficie').innerHTML = p.superficies.map((s,i) => `<option value="${i}">${s.label}</option>`).join('');
+}
+
+function fmt(n) { return n.toFixed(2).replace('.', ','); }
+
+function calc() {
+  const p = PRODUCTS[currentId];
+  const fi = parseInt(document.getElementById('ferramenta').value) || 0;
+  const si = parseInt(document.getElementById('superficie').value) || 0;
+  const area = parseFloat(document.getElementById('area').value) || 0;
+  if (area <= 0) return;
+
+  const ferr = p.ferramentas[fi];
+  const surf = p.superficies[si];
+  const demoes = surf.demoes || 2;
+  const dilPct = ferr.dilMin === ferr.dilMax ? ferr.dilMin : (ferr.dilMin + ferr.dilMax) / 2;
+  const dilUse = surf.dilOverride !== undefined ? surf.dilOverride : dilPct;
+
+  const litrosTinta    = (area * demoes) / p.rendimento;
+  const litrosDiluente = litrosTinta * dilUse;
+  const litrosTotal    = litrosTinta + litrosDiluente;
+
+  document.getElementById('r-tinta').innerHTML    = `${fmt(litrosTinta)}<span class="metric-unit">L</span>`;
+  document.getElementById('r-diluente-label').textContent = p.diluente;
+  document.getElementById('r-diluente').innerHTML = `${fmt(litrosDiluente)}<span class="metric-unit">L</span>`;
+  document.getElementById('r-total').innerHTML    = `${fmt(litrosTotal)}<span class="metric-unit">L</span>`;
+
+  const dilRange = ferr.dilMin === ferr.dilMax
+    ? `${Math.round(ferr.dilMin*100)}%`
+    : `${Math.round(ferr.dilMin*100)}–${Math.round(ferr.dilMax*100)}%`;
+
+  document.getElementById('infoBar').innerHTML =
+    `<strong>Diluição:</strong> ${Math.round(dilUse*100)}% (faixa: ${dilRange}) &nbsp;·&nbsp; ` +
+    `<strong>${demoes} demão${demoes>1?'s':''}</strong> &nbsp;·&nbsp; ${p.obs}`;
+
+  document.getElementById('warnBar').innerHTML = currentId === 'esmalte'
+    ? '<div class="warning"><strong>⚠️ Atenção:</strong> Use apenas Aguarrás Alessi como diluente. Thinner coagula o produto.</div>'
+    : '';
+}
+
+populateSelects();
+calc();
+</script>
+</body>
+</html>
